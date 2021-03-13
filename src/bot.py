@@ -15,11 +15,20 @@ def shorten(url: str) -> str:
     return url_shortener.shorten(os.environ["CUTTLY_API_KEY"], url)
 
 
+@bot.message_handler(commands=["start", "help"])
+def howto(message: telebot.types.Message):
+    """Send howto message"""
+    bot.send_message(
+        message.chat.id, "👋 Hi, send me a link and I will try to shorten it!"
+    )
+
+
 @bot.message_handler(content_types=["text"])
 def short_link(message: telebot.types.Message):
     """Shorten given link"""
+    idler = bot.reply_to(message, "👌 OK. Wait a fawe seconds")
     answer = shorten(message.text)
-    bot.reply_to(message, answer)
+    bot.edit_message_text(answer, message.chat.id, idler.message_id)
 
 
 if __name__ == "__main__":
