@@ -16,7 +16,8 @@ def _api_call(api_key: str, url: str) -> urllib3.HTTPResponse:
     """
     http = urllib3.PoolManager()
     return http.request(
-        "GET" f"http://cutt.ly/api/api.php?key={api_key}&short={url}",
+        "GET",
+        "http://cutt.ly/api/api.php?key={}&short={}".format(api_key, url),
     )
 
 
@@ -47,7 +48,8 @@ def shorten(api_key: str, url: str) -> str:
         str: message or url
     """
     api_response = _parse_json(_api_call(api_key, url).data)
-    if status := api_response["url"]["status"] == 1:
+    status = api_response["url"]["status"]
+    if status == 1:
         return url
     elif status == 2:
         return f"{url} is not a link"
