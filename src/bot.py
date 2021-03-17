@@ -26,7 +26,8 @@ def howto(message: telebot.types.Message):
 @bot.message_handler(content_types=["text"])
 def short_link(message: telebot.types.Message):
     """Shorten given link"""
-    idler = bot.reply_to(message, "👌 OK. Wait a fawe seconds")
+    idler = bot.reply_to(message, "👌 OK. Wait a faw seconds")
+    bot.send_chat_action(message.chat.id, "typing", 2)
     answer = shorten(message.text)
     bot.edit_message_text(answer, message.chat.id, idler.message_id)
 
