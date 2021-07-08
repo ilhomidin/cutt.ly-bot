@@ -1,36 +1,70 @@
 import os
+import uuid
 
-import telebot
+import telegram
 
 import url_shortener
 
 
-bot = telebot.TeleBot(os.environ["TELEGRAM_BOT_TOKEN"], parse_mode=None)
-
-
 def shorten(url: str) -> str:
-    """Partial url_shortener.shorten function
+    """
+    Partial url_shortener.shorten function
     Load api_key from environ
     """
     return url_shortener.shorten(os.environ["CUTTLY_API_KEY"], url)
 
 
-@bot.message_handler(commands=["start", "help"])
-def howto(message: telebot.types.Message):
+def howto(upd: telegram.Update, _):
     """Send howto message"""
-    bot.send_message(
-        message.chat.id, "👋 Hi, send me a link and I will try to shorten it!"
+    upd.message.reply_text(
+        "👋 Hi, send me a link and I will try to shorten it!"
     )
 
 
-@bot.message_handler(content_types=["text"])
-def short_link(message: telebot.types.Message):
+def short_link(upd: telegram.Update, _):
     """Shorten given link"""
-    idler = bot.reply_to(message, "👌 OK. Wait a faw seconds")
-    bot.send_chat_action(message.chat.id, "typing", 2)
-    answer = shorten(message.text)
-    bot.edit_message_text(answer, message.chat.id, idler.message_id)
+    if upd.message:
+        idler = upd.message.reply_text("👌 OK. Wait a faw seconds.", quote=True)
+        upd.message.reply_chat_action("typing", 2)
+        try:
+            answer = shorten(upd.message.text)
+        except Exception as exc:
+            answer = exc.args[0]
+        upd.message.bot.edit_message_text(
+            chat_id=idler.chat.id,
+            message_id=idler.message_id,
+            text=answer,
+            disable_web_page_preview=True,
+        )
+    elif upd.inline_query and upd.inline_query.query:
+        try:
+            answer = shorten(upd.inline_query.query)
+        except Exception as exc:
+            answer = exc.args[0]
+        upd.inline_query.answer(
+            [
+                telegram.InlineQueryResultArticle(
+                    id=str(uuid.uuid4()),
+                    title="Cutt.ly bot",
+                    description=answer,
+                    input_message_content=telegram.InputTextMessageContent(
+                        answer,
+                        disable_web_page_preview=True,
+                    ),
+                )
+            ]
+        )
 
 
 if __name__ == "__main__":
-    bot.polling()
+    from telegram import ext
+
+    updater = ext.Updater(os.environ["TELEGRAM_BOT_TOKEN"])
+    dispatcher = updater.dispatcher
+    dispatcher.add_handler(ext.CommandHandler("start", howto))
+    dispatcher.add_handler(ext.CommandHandler("help", howto))
+    dispatcher.add_handler(ext.MessageHandler(ext.Filters.text, short_link))
+    dispatcher.add_handler(ext.InlineQueryHandler(short_link))
+
+    updater.start_polling()
+    updater.idle()
