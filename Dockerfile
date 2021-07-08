@@ -4,6 +4,7 @@ RUN mkdir -p /usr/src/app/
 WORKDIR /usr/src/app/
 
 COPY . /usr/src/app/
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir pipenv
+RUN pipenv install
 
-ENTRYPOINT ["python", "src/bot.py"]
+ENTRYPOINT ["pipenv", "run", "python", "src/bot.py"]
