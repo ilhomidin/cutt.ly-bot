@@ -44,27 +44,31 @@ def shorten(api_key: str, url: str) -> str:
         api_key (str): user API key
         url (str): URL you want to shorten
 
+    Raises:
+        ValueError: cutt.ly API error
+        SystemError: invalid status ID
+
     Returns:
-        str: message or url
+        str: url
     """
     api_response = _parse_json(_api_call(api_key, url).data)
     status = api_response["url"]["status"]
     if status == 1:
         return url
     elif status == 2:
-        return f"{url} is not a link"
+        raise ValueError(f"{url} is not a link.")
     elif status == 5:
-        return (
-            f"{url} has not passed the validation. Includes invalid characters"
+        raise ValueError(
+            f"{url} has not passed the validation. Includes invalid characters."
         )
     elif status == 6:
-        return f"{url} provided is from a blocked domain"
+        raise ValueError(f"{url} provided is from a blocked domain.")
     elif status == 7:
         return api_response["url"]["shortLink"]
     elif status == 8:
-        return f"Can't make {url} shorten"
+        raise ValueError(f"Can't make {url} shorten.")
     else:
-        return f"Bot Error"
+        raise SystemError(f"Internal bot error. Please come back in 5 minutes.")
 
 
 __all__ = ["shorten"]
